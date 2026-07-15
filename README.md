@@ -22,10 +22,10 @@ GestureOS uses the current MediaPipe Hand Landmarker Tasks API. The hand model i
 | Gesture | Behavior |
 | --- | --- |
 | Open palm | Opens the Windows Start menu |
-| Index finger | Smooth cursor movement; forward-and-return motion clicks |
+| Index finger | Smooth cursor movement; pinch-to-click and hold-to-drag |
 | Index + middle | Hand-up scrolls down; hand-down scrolls up |
-| Closed fist / pinch | No action (pinch is reserved) |
+| Closed fist / pinch | Reserved for left-click and drag interactions |
 
 Settings are kept in `settings.json`, generated on clean exit. Move the cursor into a screen corner to use PyAutoGUI's built-in failsafe.
 
-The cursor uses a five-frame average, a low-pass smoothing filter, and a four-pixel dead zone. This makes it steadier at the cost of a small amount of lag; adjust `cursor_smoothing` (lower is smoother) and `cursor_deadzone` in `settings.json` after closing the app.
+The cursor uses a five-frame average, a low-pass smoothing filter, and a four-pixel dead zone. This makes it steadier at the cost of a small amount of lag; adjust `cursor_smoothing` (lower is smoother) and `cursor_deadzone` in `settings.json` after closing the app. Pinch interactions use the thumb-tip to index-tip distance with separate start and release thresholds, plus a 300 ms hold before drag begins.

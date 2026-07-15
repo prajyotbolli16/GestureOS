@@ -1,13 +1,15 @@
-"""Smooth cursor, depth-click, and scroll control."""
+"""Smooth cursor, pinch-click, drag, and scroll control."""
 from __future__ import annotations
 
+import math
+import time
 from collections import deque
 from typing import Optional
+
 import pyautogui
 
 from config import AppConfig
 from hand_tracker import HandData
-from utils import RateLimiter
 
 
 class MouseController:
@@ -18,10 +20,13 @@ class MouseController:
         self._screen_width, self._screen_height = pyautogui.size()
         self._smoothed: Optional[tuple[float, float]] = None
         self._position_history: deque[tuple[float, float]] = deque(maxlen=5)
-        self._click_baseline_z: Optional[float] = None
-        self._push_depth_z: Optional[float] = None
         self._previous_scroll_y: Optional[float] = None
-        self._click_limiter = RateLimiter(config.gesture_cooldown)
+        self._pinch_state = "idle"
+        self._pinch_started_at: Optional[float] = None
+        self._mouse_pressed = False
+        self._pinch_threshold = config.pinch_threshold
+        self._release_threshold = config.release_threshold
+        self._drag_hold_time_ms = config.drag_hold_time_ms
 
     def move(self, hand: HandData) -> None:
         """Move toward the index-tip target using exponential smoothing."""
@@ -40,24 +45,42 @@ class MouseController:
         self._smoothed = candidate
         pyautogui.moveTo(*self._smoothed, duration=0)
 
+    def _thumb_index_distance(self, hand: HandData) -> float:
+        thumb = hand.landmarks[4]
+        index = hand.landmarks[8]
+        return math.hypot(index[0] - thumb[0], index[1] - thumb[1])
+
     def detect_click(self, hand: HandData) -> bool:
-        """Click only after a forward (more negative Z) push then return."""
-        z = hand.depth
-        if self._click_baseline_z is None:
-            self._click_baseline_z = z
+        """Use a thumb-index pinch state machine for single-click and drag interaction."""
+        distance = self._thumb_index_distance(hand)
+        now = time.monotonic()
+
+        if self._pinch_state == "idle":
+            if distance < self._pinch_threshold:
+                self._pinch_state = "pinch_started"
+                self._pinch_started_at = now
+                pyautogui.click()
+                return True
             return False
-        if self._push_depth_z is None:
-            if z < self._click_baseline_z - self.config.click_threshold:
-                self._push_depth_z = z
-            else:
-                # Adapt slowly to a resting hand without absorbing a quick push.
-                self._click_baseline_z = self._click_baseline_z * 0.9 + z * 0.1
+
+        if distance > self._release_threshold:
+            if self._mouse_pressed:
+                pyautogui.mouseUp()
+                self._mouse_pressed = False
+            self._pinch_state = "idle"
+            self._pinch_started_at = None
             return False
-        if z >= self._push_depth_z + self.config.click_threshold * 0.5 and self._click_limiter.ready():
-            pyautogui.click()
-            self._click_baseline_z = z
-            self._push_depth_z = None
-            return True
+
+        if self._pinch_state in {"pinch_started", "holding_pinch"}:
+            if self._pinch_started_at is not None and now - self._pinch_started_at >= self._drag_hold_time_ms / 1000.0:
+                if not self._mouse_pressed:
+                    pyautogui.mouseDown()
+                    self._mouse_pressed = True
+                self._pinch_state = "dragging"
+                return True
+            self._pinch_state = "holding_pinch"
+            return False
+
         return False
 
     def scroll(self, hand: HandData) -> bool:
@@ -76,7 +99,10 @@ class MouseController:
 
     def reset_modes(self) -> None:
         """Discard motion state when changing gesture modes."""
-        self._click_baseline_z = None
-        self._push_depth_z = None
+        if self._mouse_pressed:
+            pyautogui.mouseUp()
+            self._mouse_pressed = False
+        self._pinch_state = "idle"
+        self._pinch_started_at = None
         self._previous_scroll_y = None
         self._position_history.clear()

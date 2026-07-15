@@ -21,6 +21,9 @@ class AppConfig:
     cursor_smoothing: float = 0.14
     cursor_deadzone: int = 4
     click_threshold: float = 0.055
+    pinch_threshold: float = 0.12
+    release_threshold: float = 0.16
+    drag_hold_time_ms: int = 300
     scroll_speed: int = 4
     voice_enabled: bool = False
     mouse_enabled: bool = True
