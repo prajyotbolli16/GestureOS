@@ -56,14 +56,16 @@ class MouseControllerPinchTests(unittest.TestCase):
         with patch.object(mouse_controller.pyautogui, "click") as click_mock, \
              patch.object(mouse_controller.pyautogui, "mouseDown") as mouse_down_mock, \
              patch.object(mouse_controller.pyautogui, "mouseUp") as mouse_up_mock, \
-             patch.object(mouse_controller.time, "monotonic", side_effect=[1000.0, 1000.3, 1000.3]):
+             patch.object(mouse_controller.time, "monotonic", side_effect=[1000.0, 1000.0, 1000.301, 1000.301, 1000.301]):
             self.assertTrue(controller.detect_click(pinched))
             self.assertFalse(controller.detect_click(pinched))
+            self.assertTrue(controller.detect_click(pinched))
+            self.assertFalse(controller.detect_click(released))
             self.assertFalse(controller.detect_click(released))
 
         click_mock.assert_called_once_with()
         mouse_down_mock.assert_called_once_with()
-        mouse_up_mock.assert_called_once_with()
+        mouse_up_mock.assert_not_called()
 
 
 if __name__ == "__main__":

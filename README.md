@@ -24,7 +24,7 @@ GestureOS uses the current MediaPipe Hand Landmarker Tasks API. The hand model i
 | Open palm | Opens the Windows Start menu |
 | Index finger | Smooth cursor movement; pinch-to-click and hold-to-drag |
 | Index + middle | Hand-up scrolls down; hand-down scrolls up |
-| Closed fist / pinch | Reserved for left-click and drag interactions |
+| Pinch | Left-click on pinch start, hold to drag, release on pinch end |
 
 Settings are kept in `settings.json`, generated on clean exit. Move the cursor into a screen corner to use PyAutoGUI's built-in failsafe.
 

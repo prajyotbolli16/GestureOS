@@ -51,7 +51,7 @@ class MouseController:
         return math.hypot(index[0] - thumb[0], index[1] - thumb[1])
 
     def detect_click(self, hand: HandData) -> bool:
-        """Use a thumb-index pinch state machine for single-click and drag interaction."""
+        """Drive a thumb-index pinch state machine for single-click and drag interaction."""
         distance = self._thumb_index_distance(hand)
         now = time.monotonic()
 
