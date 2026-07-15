@@ -1,0 +1,10 @@
+# Python build and runtime output
+__pycache__/
+*.py[cod]
+*.log
+
+# Local application preferences
+settings.json
+
+# Downloaded at setup; do not commit the binary model.
+assets/*.task
